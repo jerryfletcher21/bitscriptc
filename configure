@@ -1,0 +1,20 @@
+#!/bin/sh
+
+cd "$(dirname "$0")" || exit 1
+
+python_path="python"
+
+if ! which python >/dev/null 2>&1; then
+    if which python3 >/dev/null 2>&1; then
+        ln -sf "$(which python3)" "$python_path"
+        export PATH="${PWD}:${PATH}"
+    elif which python2 >/dev/null 2>&1; then
+        ln -sf "$(which python2)" "$python_path"
+        export PATH="${PWD}:${PATH}"
+    else
+        echo "error: python not found" >&2
+        exit 1
+    fi
+fi
+
+script/libwally-core-build static

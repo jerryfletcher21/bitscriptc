@@ -1,0 +1,59 @@
+#!/bin/sh
+
+if [ "$#" -lt 1 ]; then
+    echo "error: insert static or shared" >&2
+    exit 1
+fi
+mode="$1"
+case "$mode" in
+    static|shared) ;;
+    *)
+        echo "error: mode $mode not available" >&2
+        exit 1
+    ;;
+esac
+
+if [ "$0" = "./$(basename "$0")" ]; then
+    change_path=".."
+else
+    change_path="$(dirname "$(dirname "$0")")"
+fi
+
+cd "$change_path" || exit 1
+
+if command -v gmake >/dev/null 2>&1; then
+    make_bin="gmake"
+else
+    make_bin="make"
+fi
+
+libwally_dir="libwally-core"
+libwally_url="https://github.com/ElementsProject/libwally-core.git"
+if [ ! -d "$libwally_dir" ]; then
+    git clone --recurse-submodules "$libwally_url" "$libwally_dir"
+    git -C "$libwally_dir" submodule init
+    git -C "$libwally_dir" submodule sync --recursive
+    git -C "$libwally_dir" submodule update --init --recursive
+else
+    $make_bin -C "$libwally_dir" clean
+fi
+
+cd "$libwally_dir" || exit 1
+
+git checkout release_1.2.0 || exit 1
+
+./tools/autogen.sh || exit 1
+
+case "$mode" in
+    static)
+        ./configure --disable-shared || exit 1
+        $make_bin || exit 1
+        $make_bin check || exit 1
+    ;;
+    shared)
+        ./configure --prefix="$HOME/.local" || exit 1
+        $make_bin || exit 1
+        $make_bin check || exit 1
+        $make_bin install || exit 1
+    ;;
+esac
