@@ -20,6 +20,8 @@ so they only work with legacy addresses (see
 The scripts help with signing from any addresses with bitcoin core in a
 minimal way and with less dependencies possible.
 
+Completions for bash are in `completions/bitscriptc.bash-completion`
+
 ## Build and installation
 
 ```

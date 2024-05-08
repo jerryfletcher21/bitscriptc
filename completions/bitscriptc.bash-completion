@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# source this file in ~/.bashrc
+
+__bitscriptc_completion() {
+    if ! command -v bitscriptc >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local ifs_original="$IFS"
+    local ifs_newline='
+'
+
+    # shellcheck disable=SC2034
+    local cur prev words=() cword
+
+    cur="$2"
+    # prev="$3"
+    words=("${COMP_WORDS[@]}")
+    cword="$COMP_CWORD"
+
+    OPTS=""
+
+    if [ "${cword}" -eq 1 ]; then
+        OPTS="-h
+--help
+$(
+    bitscriptc -h |
+    tail -n +4 |
+    while read -r line; do
+        if [ "$line" = "" ]; then
+            break
+        fi
+        printf "%s\n" "$line"
+    done |
+    cut -d " " -f 1
+)"
+    else
+        local action="${words[1]}"
+
+        case "$action" in
+        xprv-from-bip39)
+            if [ "$cword" -eq 2 ]; then
+                OPTS="testnet"
+            fi
+        ;;
+        xpub-from-xprv)
+            if [ "$cword" -eq 2 ]; then
+                OPTS="root"
+            fi
+        ;;
+        esac
+    fi
+
+    if [ -n "$OPTS" ]; then
+        # complete with ignorecase and multi words
+        IFS="$ifs_newline"
+        # shellcheck disable=SC2207
+        COMPREPLY=($(
+            printf "%s\n" "$OPTS" |
+            awk -v IGNORECASE=1 -v p="$cur" 'p==substr($0,0,length(p))'
+        ))
+        IFS="$ifs_original"
+    fi
+} &&
+complete -F __bitscriptc_completion bitscriptc
